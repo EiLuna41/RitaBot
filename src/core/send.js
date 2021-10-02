@@ -13,14 +13,14 @@ const fn = require("./helpers");
 const db = require("./db");
 const logger = require("./logger");
 const discord = require("discord.js");
-const webHookName = "Translator Messaging System";
+const webHookName = "RITA Messaging System";
 const error = require("./error");
 
 // -----------------
 // Permission Check
 // -----------------
 
-const checkPerms = function checkPerms (data, sendBox)
+function checkPerms (data, sendBox)
 {
 
    // ------------------------------------------------------------------------
@@ -32,7 +32,7 @@ const checkPerms = function checkPerms (data, sendBox)
 
       var sendData = {
          "attachments": data.message.attachments,
-         "bot": data.bot,
+         "bot": data.message.client.user,
          "channel": data.message.channel,
          "color": data.color,
          "config": data.config,
@@ -56,24 +56,24 @@ const checkPerms = function checkPerms (data, sendBox)
    if (!data.canWrite)
    {
 
-      console.log("DEBUG: Perms Error, Write Restricted 1");
-      console.log(`DEBUG: Perm Check 1 ${data.canWrite}`);
+      // console.log("DEBUG: Perms Error, Write Restricted 1");
+      // console.log(`DEBUG: Perm Check 1 ${data.canWrite}`);
       const writeErr =
-         `:no_entry:  **${data.bot.username}** does not have permission to write in ` +
+         `:no_entry:  **${data.message.client.user.username}** does not have permission to write in ` +
          `the ${sendData.channel.id} channel on your server **` +
          `${sendData.channel.guild.name}**. Please fix.`;
-
+      // console.log("DEBUG: Line 65 - Send.js");
       return sendData.channel.guild.owner.
          send(writeErr).
          catch((err) => console.log("error", err, "warning", data.message.guild.name));
 
    }
-   console.log(`DEBUG: Perm Check 2 ${data.canWrite}`);
+   // console.log(`DEBUG: Perm Check 2 ${data.canWrite}`);
 
    if (data.forward)
    {
 
-      const forwardChannel = data.client.channels.cache.get(data.forward);
+      const forwardChannel = data.message.client.channels.cache.get(data.forward);
 
       if (forwardChannel)
       {
@@ -127,23 +127,29 @@ const checkPerms = function checkPerms (data, sendBox)
             // Notify server owner if bot cannot write to forwarding channel
             // --------------------------------------------------------------
 
-            console.log("DEBUG: Error 50013 - Destination");
+            // console.log("DEBUG: Error 50013 - Destination");
+
+            const col = "errorcount";
+            const id = data.message.sourceID;
+            db.increaseServersCount(col, id);
+
             logger("custom", {
                "color": "ok",
                "msg": `:exclamation: Write Permission Error - Destination\n
                   Server: **${data.channel.guild.name}** \n
                   Channel: **${forwardChannel.name}**\n
                   Chan ID: **${forwardChannel.id}**\n
-                  Owner: **${data.channel.guild.owner}**\n
+                  Server ID: **${data.message.sourceID}**\n
+                  Owner: **${data.message.guild.owner} - ${data.message.guild.owner.user.tag}**\n
                   The server owner has been notified . \n`
             });
 
-            console.log("DEBUG: Perms Error, Write Restricted 2");
+            // console.log("DEBUG: Perms Error, Write Restricted 2");
             const writeErr =
-            `:no_entry:  **${data.bot.username}** does not have permission to write in ` +
+            `:no_entry:  **${data.message.client.user.username}** does not have permission to write in ` +
             `the ${forwardChannel.name} channel on your server **` +
             `${sendData.channel.guild.name}**. Please fix.`;
-
+            // console.log("DEBUG: Line 147 - Send.js");
             return sendData.channel.guild.owner.
                send(writeErr).
                catch((err) => console.log("error", err, "warning", sendData.channel.guild.name));
@@ -177,12 +183,12 @@ const checkPerms = function checkPerms (data, sendBox)
    if (data.showAuthor)
    {
 
-      sendData.author = data.message.author;
+      sendData.message.author = data.message.author;
 
-      if (data.author)
+      if (data.message.author)
       {
 
-         sendData.author = data.author;
+         sendData.message.author = data.message.author;
 
       }
 
@@ -194,13 +200,13 @@ const checkPerms = function checkPerms (data, sendBox)
 
    return sendBox(sendData);
 
-};
+}
 
 // ----------------------------
 // Embedded Variable "On" Code
 // ----------------------------
 
-const embedOn = function embedOn (data)
+function embedOn (data)
 {
 
    // -----------------------------------------------
@@ -208,7 +214,7 @@ const embedOn = function embedOn (data)
    // Only if content is forwared to another channel
    // -----------------------------------------------
 
-   const sendEmbeds = function sendEmbeds (data)
+   function sendEmbeds (data)
    {
 
       if (data.forward && data.embeds && data.embeds.length > 0)
@@ -239,13 +245,13 @@ const embedOn = function embedOn (data)
 
       }
 
-   };
+   }
 
    // -------------------
    // Resend attachments
    // -------------------
 
-   const sendAttachments = function sendAttachments (data)
+   function sendAttachments (data)
    {
 
       if (!data.attachments)
@@ -282,29 +288,29 @@ const embedOn = function embedOn (data)
                attachments[i].url,
                attachments[i].name
             );
-            data.channel.send(`**${messageData.author.username}** sent a file:`, attachmentObj);
+            data.channel.send(`**${data.message.author.username}** sent a file:`, attachmentObj);
 
          }
 
       }
 
-   };
+   }
 
    // ----------
    // Send data
    // ----------
 
-   const sendBox = function sendBox (data)
+   function sendBox (data)
    {
 
 
       /*
-      If (data.author)
+      If (data.message.author)
       {
-         data.author = {
-            name: data.author.username,
+         data.message.author = {
+            name: data.message.author.username,
             //eslint-disable-next-line camelcase
-            icon_url: data.author.displayAvatarURL()
+            icon_url: data.message.author.displayAvatarURL()
          };
       }*/
 
@@ -313,15 +319,15 @@ const embedOn = function embedOn (data)
 
          {
 
-            if (!data.author)
+            if (!data.message.author)
             {
 
-               console.log("DEBUG: Is bot.author - embed on");
+               // console.log("DEBUG: Is bot.author - embed on");
                // eslint-disable-next-line no-redeclare
                var embed = {
                   "author": {
-                     "icon_url": data.bot.displayAvatarURL(),
-                     "name": data.bot.username
+                     "icon_url": data.message.client.user.displayAvatarURL(),
+                     "name": data.message.client.user.username
                   },
                   "color": colors.get(data.color),
                   "description": data.text,
@@ -334,12 +340,12 @@ const embedOn = function embedOn (data)
             else
             {
 
-               console.log("DEBUG: Is data.author - embed on");
+               // console.log("DEBUG: Is data.message.author - embed on");
                // eslint-disable-next-line no-redeclare
                var embed = {
                   "author": {
-                     "icon_url": data.author.displayAvatarURL(),
-                     "name": data.author.username
+                     "icon_url": data.message.author.displayAvatarURL(),
+                     "name": data.message.author.username
                   },
                   "color": colors.get(data.color),
                   "description": data.text,
@@ -367,9 +373,9 @@ const embedOn = function embedOn (data)
 
                let errMsg = err;
 
-               // ------------------------
-               // Error for long messages
-               // ------------------------
+               // -------
+               // Errors
+               // -------
 
                if (err.code && err.code === error.content)
                {
@@ -381,16 +387,59 @@ const embedOn = function embedOn (data)
                if (err.code && err.code === error.perm || error.access)
                {
 
-                  console.log("DEBUG: Error 50013 - Origin");
+                  const col = "errorcount";
+                  const id = data.message.sourceID;
+                  db.increaseServersCount(col, id);
+
+                  // console.log("DEBUG: Error 50013 - Origin");
                   return logger("custom", {
                      "color": "ok",
                      "msg": `:exclamation: Write Permission Error - Origin \n
                   Server: **${data.guild.name}** \n
                   Channel: **${data.channel.name}**\n
                   Chan ID: **${data.channel.id}**\n
-                  Owner: **${data.channel.guild.owner}**\n
+                  Server ID: **${data.message.sourceID}**\n
+                  Owner: **${data.message.guild.owner}**\n
                   The server owner has been notified. \n`
                   });
+
+               }
+
+               if (err.code && err.code === error.fileTooLarge)
+               {
+
+                  // console.log("DEBUG: Error 40005");
+                  return logger("custom", {
+                     "color": "ok",
+                     "msg": `:exclamation: File To Large \n
+                  Server: **${data.guild.name}** \n
+                  Channel: **${data.channel.name}**\n
+                  Chan ID: **${data.channel.id}**\n
+                  Owner: **${data.channel.guild.owner}**\n`
+                  }).catch((err) => console.log(
+                     "error",
+                     err,
+                     "warning"
+                  ));
+
+               }
+
+               if (err.code && err.code === error.unknownUser || errorunknownMember || error.invalidRecipient)
+               {
+
+                  // console.log(`DEBUG: Error ${err.code}`);
+                  return logger("custom", {
+                     "color": "ok",
+                     "msg": `:exclamation: Unknown User / Member / Recipient \n
+                  Server: **${data.guild.name}** \n
+                  Channel: **${data.channel.name}**\n
+                  Chan ID: **${data.channel.id}**\n
+                  Owner: **${data.channel.guild.owner}**\n`
+                  }).catch((err) => console.log(
+                     "error",
+                     err,
+                     "warning"
+                  ));
 
                }
 
@@ -420,13 +469,22 @@ const embedOn = function embedOn (data)
                            "```prolog\nServer > Privacy Settings > " +
                            "'Allow direct messages from server members'\n```");
 
-                  });
+                  }).catch((err) => console.log(
+                     "error",
+                     err,
+                     "warning"
+                  ));
 
                }
 
                logger("error", errMsg, "warning", data.message.channel.guild.name);
 
-            });
+            }).
+            catch((err) => console.log(
+               "error",
+               err,
+               "warning"
+            ));
 
       }
       else if (data.attachments.array().length > 0)
@@ -436,17 +494,17 @@ const embedOn = function embedOn (data)
 
       }
 
-   };
+   }
 
    return checkPerms(data, sendBox);
 
-};
+}
 
 // -----------------------------
 // Embedded Variable "Off" Code
 // -----------------------------
 
-const embedOff = function embedOff (data)
+function embedOff (data)
 {
 
    // -------------
@@ -512,38 +570,38 @@ const embedOff = function embedOff (data)
       {
 
          return webhook.send(null, {
-            "avatarURL": messageData.author.displayAvatarURL(),
+            "avatarURL": data.message.author.displayAvatarURL(),
             files,
-            "username": messageData.author.username
-         });
+            "username": data.message.author.username
+         }).catch((err) => console.log("error", err, "send", data.message.guild.name));
 
       }
 
       {
 
-         if (!data.author)
+         if (!data.message.author)
          {
 
-            console.log("DEBUG: Is bot.author embed off");
+            // console.log("DEBUG: Is bot.author embed off");
             webhook.send(data.text, {
                // If you get a error at the below line then the bot does not have write permissions.
 
-               "avatarURL": data.bot.displayAvatarURL(),
+               "avatarURL": data.message.client.user.displayAvatarURL(),
                files,
-               "username": data.bot.username || data.message
+               "username": data.message.client.user.username || data.message
             });
 
          }
          else
          {
 
-            console.log("DEBUG: Is data.author embed off");
+            // console.log("DEBUG: Is data.message.author embed off");
             webhook.send(data.text, {
                // If you get a error at the below line then the bot does not have write permissions.
 
-               "avatarURL": data.author.displayAvatarURL(),
+               "avatarURL": data.message.author.displayAvatarURL(),
                files,
-               "username": data.author.username || data.message
+               "username": data.message.author.username || data.message
             });
 
          }
@@ -556,7 +614,7 @@ const embedOff = function embedOff (data)
    // Resend attachments
    // -------------------
 
-   const sendAttachments = function sendAttachments (data)
+   function sendAttachments (data)
    {
 
       if (!data.attachments && !data.attachments.array().length > 0)
@@ -599,13 +657,13 @@ const embedOff = function embedOff (data)
 
       }
 
-   };
+   }
 
    // ---------------------
    // Send Data to Channel
    // ---------------------
 
-   const sendBox = function sendBox (data)
+   function sendBox (data)
    {
 
       const channel = data.channel;
@@ -629,7 +687,7 @@ const embedOff = function embedOff (data)
       if (!avatarURL)
       {
 
-         avatarURL = data.author;
+         avatarURL = data.message.author;
 
       }
 
@@ -640,8 +698,9 @@ const embedOff = function embedOff (data)
       if (data.channel.type === "dm")
       {
 
+         // console.log("DEBUG: Line 690 - Send.js");
          const embed = new discord.MessageEmbed().
-            setAuthor(data.author.username, data.author.displayAvatarURL()).
+            setAuthor(data.message.author.username, data.message.author.displayAvatarURL()).
             setColor(colors.get(data.color)).
             setDescription(data.text).
             setFooter(data.footer.text);
@@ -658,7 +717,7 @@ const embedOff = function embedOff (data)
             {
 
                // You can rename 'Webhook' to the name of your bot if you like, people will see if under the webhooks tab of the channel.
-               existingWebhook = webhooks.find((x) => x.name === webHookName);
+               const existingWebhook = webhooks.find((x) => x.name === webHookName);
                const webHookURL = "https://ritabot.gg/index/images/favicon.png";
 
                if (!existingWebhook)
@@ -685,12 +744,12 @@ const embedOff = function embedOff (data)
 
       }
 
-   };
+   }
 
 
    checkPerms(data, sendBox);
 
-};
+}
 
 // ---------------------
 // Send Data to Channel
@@ -700,89 +759,8 @@ const embedOff = function embedOff (data)
 module.exports = function run (data)
 {
 
-   const before = Date.now();
+   // Const before = Date.now();
 
-   global.messageData = data.message;
-   // ----------------------------
-   // Regex Statments for Emoji's
-   // ----------------------------
-
-   function languageRegex (data)
-
-   {
-
-      // Remove Whitespaces
-      data.text = data.text.replace(/<.+?>/g, (tag) => tag.replace(/\s+/g, ""));
-      //  Remove translated numeral keywords
-      data.text = data.text.replace(/millions/gmi, ``);
-      data.text = data.text.replace(/milioni/gmi, ``);
-      // Commas Replacement
-      const regex10 = /(?<=<[^<>]*?),+(?=[^<>]*>)/gm;
-      data.text = data.text.replace(regex10, ``);
-      // Period Replacement
-      const regex11 = /(?<=<[^<>]*?)\.+(?=[^<>]*>)/gm;
-      data.text = data.text.replace(regex11, ``);
-      //  Remove Exclamation marks
-      data.text = data.text.replace(/<@!/gmi, `<@`);
-      data.text = data.text.replace(/<!@/gmi, `<@`);
-      //  Change formatted special characters to normal
-      data.text = data.text.replace(/：/gmi, ":");
-      data.text = data.text.replace(/，/gmi, ", ");
-      data.text = data.text.replace(/、/gmi, ", ");
-      data.text = data.text.replace(/！/gmi, "");
-      data.text = data.text.replace(/<A/gmi, "<a");
-      data.text = data.text.replace(/>/gmi, ">");
-      data.text = data.text.replace(/</gm, "<");
-      data.text = data.text.replace(/<А/gmi, "<a");
-      data.text = data.text.replace(/＆/gmi, ``);
-      data.text = data.text.replace(/></gm, `> <`);
-      data.text = data.text.replace(/＃/gmi, "#");
-      data.text = data.text.replace(/＃/gmi, "#");
-      data.text = data.text.replace(/((\s?)(\*)(\s?))/gmis, "*");
-      data.text = data.text.replace(/(?<=<[^<>]*?)([0-9]*)\s*@+(?=[^<>]*>)/gmi, "@$1");
-
-   }
-
-   if (data.author)
-   {
-
-      if (data.text)
-      {
-
-         languageRegex(data);
-         data.text = data.text.replace(/<А/gmi, "<a");
-         if (data.text.includes("<А" || "<a"))
-         {
-
-            const regex1 = /<(a)([:?\s:\s[a-z0-9ЁёА-я_A-Z\s\u00C0-\u017F]+\S*:\s*)([0-9\s]+)>/gmi;
-            const str1 = data.text;
-            const subst1 = `<a:customemoji:$3>`;
-            data.text = str1.replace(regex1, subst1);
-
-         }
-         //   If a combination of animated emojis and normal custom emojis
-         if (!data.text.includes("<a") && data.text.includes("<:"))
-         {
-
-            const subst5 = "<:customemoji:$3>";
-            const str5 = data.text;
-            const regx5 = /<:([:?\s:\s[a-z0-9ЁёА-я_A-Z\s\u00C0-\u017F]+\S*(:)\s*)([0-9\s]+)>/gmi;
-            data.text = str5.replace(regx5, subst5);
-
-         }
-         if (data.text.includes("<a") && data.text.includes("<:"))
-         {
-
-            const regex20 = /<(a)([:?\s:\s[a-z0-9ЁёА-я_A-Z\s\u00C0-\u017F]+\S*:\s*)([0-9\s]+)>/gmi;
-            const regex30 = /<:([:?\s:\s[a-z0-9ЁёА-я_A-Z\s\u00C0-\u017F]+\S*(:)\s*)([0-9\s]+)>/gmi;
-            data.text.replace(regex20, "<a:customemoji:$3>");
-            data.text.replace(regex30, "<:customemoji:$3>");
-
-         }
-
-      }
-
-   }
 
    // Const guildValue = data.message.guild.id;
    data.channel = data.message.channel;
@@ -791,11 +769,10 @@ module.exports = function run (data)
    // Primary If Statment
    // --------------------
    const embedstyle = db.server_obj[data.message.guild.id].db.embedstyle;
-
    if (embedstyle === "on")
    {
 
-      console.log("DEBUG: Embed on");
+      // console.log("DEBUG: Embed on");
 
       const col = "embedon";
       let id = "bot";
@@ -813,11 +790,10 @@ module.exports = function run (data)
       return embedOn(data);
 
    }
-   else
-   if (data.message.guild.me.permissions.has("MANAGE_WEBHOOKS"))
+   else if (data.message.guild.me.permissions.has("MANAGE_WEBHOOKS"))
    {
 
-      console.log("DEBUG: Embed off");
+      // console.log("DEBUG: Embed off");
 
       const col = "embedoff";
       let id = "bot";
@@ -836,11 +812,11 @@ module.exports = function run (data)
 
    }
 
-   const after = Date.now();
-   console.log(after - before);
+   // Const after = Date.now();
+   // Console.log(after - before);
 
-   console.log("DEBUG: Perms Error");
-   data.text = `:warning: ${data.bot.username} does not have sufficient permissions to send Webhook Messages. Please give ${data.bot.username} the \`MANAGE_WEBHOOKS\` permission.`;
+   // console.log("DEBUG: Perms Error");
+   data.text = `:warning: ${data.message.client.user.username} does not have sufficient permissions to send Webhook Messages. Please give ${data.message.client.user.username} the \`MANAGE_WEBHOOKS\` permission.`;
    data.color = "warn";
 
    return data.channel.send({"embed": {

@@ -1,10 +1,11 @@
-/* eslint-disable no-bitwise */
+/* eslint-disable no-unused-vars */
 // -----------------
 // Global variables
 // -----------------
 
 // Codebeat:disable[LOC,ABC,BLOCK_NESTING,ARITY]
 /* eslint-disable consistent-return */
+/* eslint-disable no-bitwise */
 const discord = require("discord.js");
 const auth = require("./auth");
 const colors = require("./colors").get;
@@ -14,7 +15,7 @@ const spacer = "​                                                          ​
 // Log data to console
 // --------------------
 
-const devConsole = function devConsole (data)
+function devConsole (data)
 {
 
    if (auth.dev)
@@ -24,13 +25,13 @@ const devConsole = function devConsole (data)
 
    }
 
-};
+}
 
 // ------------
 // Hook Sender
 // ------------
 
-const hookSend = function hookSend (data)
+function hookSend (data)
 {
 
    const hook = new discord.WebhookClient(
@@ -52,13 +53,13 @@ const hookSend = function hookSend (data)
 
    });
 
-};
+}
 
 // -------------
 // Error Logger
 // -------------
 
-const errorLog = function errorLog (error, subtype, id)
+function errorLog (error, subtype, id)
 {
 
    let errorTitle = null;
@@ -92,20 +93,30 @@ const errorLog = function errorLog (error, subtype, id)
 
    }
 
+   /*
+   if (errorTypes[subtype] === ":japanese_ogre:  Unhandled promise rejection")
+   {
+
+      return console.log(`----------------------------------------\nError ${errorTitle} Suppressed\n${error.stack}\n----------------------------------------\n`);
+
+   }
+
+   console.log(`----------------------------------------\nError ${errorTitle} Suppressed\n${error.stack}\n----------------------------------------\n`);
    hookSend({
       "color": "err",
       // eslint-disable-next-line no-useless-concat
       "msg": `\`\`\`json\n${error.toString()}\n${error.stack}\n\n` + `Error originated from server: ${id}\`\`\``,
       "title": errorTitle
    });
+   */
 
-};
+}
 
 // ----------------
 // Warnings Logger
 // ----------------
 
-const warnLog = function warnLog (warning)
+function warnLog (warning)
 {
 
    hookSend({
@@ -113,13 +124,13 @@ const warnLog = function warnLog (warning)
       "msg": warning
    });
 
-};
+}
 
 // ---------------
 // Guild Join Log
 // ---------------
 
-const logJoin = function logJoin (guild)
+function logJoin (guild)
 {
 
    if (guild.owner)
@@ -133,7 +144,9 @@ const logJoin = function logJoin (guild)
             guild.owner.user.discriminator}\n${guild.memberCount} members\n\`\`\`${spacer}${spacer}`,
          "title": "Joined Guild"
 
+
       });
+      console.log(`----------------------------------------\nGuild Join: ${guild.name}\nGuild ID: ${guild.id}\nGuild Owner: ${guild.owner.user.username}#${guild.owner.user.discriminator}\nSize: ${guild.memberCount}\n----------------------------------------`);
 
    }
    else
@@ -143,20 +156,21 @@ const logJoin = function logJoin (guild)
          "color": "ok",
          "msg":
          `${`:white_check_mark:  **${guild.name}**\n` +
-         "```md\n> "}${guild.id}\n${guild.memberCount} members#\n\`\`\`${spacer}${spacer}`,
+         "```md\n> "}${guild.id}\n${guild.memberCount} members\n\`\`\`${spacer}${spacer}`,
          "title": "Joined Guild"
 
       });
+      console.log(`----------------------------------------\nGuild Join: ${guild.name}\nGuild ID: ${guild.id}\nSize: ${guild.memberCount}\n----------------------------------------`);
 
    }
 
-};
+}
 
 // ----------------
 // Guild Leave Log
 // ----------------
 
-const logLeave = function logLeave (guild)
+function logLeave (guild)
 {
 
    if (guild.owner)
@@ -170,6 +184,7 @@ const logLeave = function logLeave (guild)
             guild.owner.user.discriminator}\n${guild.memberCount} members\n\`\`\`${spacer}${spacer}`,
          "title": "Left Guild"
       });
+      console.log(`----------------------------------------\nGuild Left: ${guild.name}\nGuild ID: ${guild.id}\nGuild Owner: ${guild.owner.user.username}#${guild.owner.user.discriminator}\nSize: ${guild.memberCount}\n----------------------------------------`);
 
    }
    else
@@ -182,10 +197,11 @@ const logLeave = function logLeave (guild)
          "```md\n> "}${guild.id}\n${guild.memberCount} members\n\`\`\`${spacer}${spacer}`,
          "title": "Left Guild"
       });
+      console.log(`----------------------------------------\nGuild Left: ${guild.name}\nGuild ID: ${guild.id}\nSize: ${guild.memberCount}\n----------------------------------------`);
 
    }
 
-};
+}
 
 // ------------
 // Logger code
@@ -224,7 +240,7 @@ module.exports = function run (type, data, subtype = null, id)
 
          {
 
-            console.log("Has guild");
+            // console.log("Has guild");
             const id = data.message.guild.name;
             return logTypes[type](
                data,
@@ -234,11 +250,11 @@ module.exports = function run (type, data, subtype = null, id)
 
          }
 
-         console.log("Has Message");
+         // console.log("Has Message");
 
       }
 
-      console.log("Has");
+      // console.log("Has");
 
       return logTypes[type](
          data,
